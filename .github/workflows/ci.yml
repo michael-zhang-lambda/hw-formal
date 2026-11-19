@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# cancel superseded runs on the same branch / PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and check proofs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check HwFormal.lean imports every library module
+        run: |
+          missing=0
+          for f in $(find HwFormal -name '*.lean' | sort); do
+            mod=$(echo "${f%.lean}" | tr / .)
+            if ! grep -qx "import $mod" HwFormal.lean; then
+              echo "::error file=HwFormal.lean::missing 'import $mod'"
+              missing=1
+            fi
+          done
+          exit $missing
+
+      # Installs elan + the toolchain from lean-toolchain, caches .lake, then runs
+      # `lake build --wfail` (all libs incl. tests/) and `lake test`.
+      # --wfail turns warnings into errors, so any `sorry`/`admit` fails CI.
+      - uses: leanprover/lean-action@v1
+        with:
+          build-args: "--wfail"
+          test: true
+          use-github-cache: true

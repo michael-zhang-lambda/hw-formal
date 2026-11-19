@@ -1,9 +1,18 @@
 name = "hw-formal"
 version = "0.1.0"
-defaultTargets = ["hw-formal"]
+defaultTargets = ["HwFormal", "Tests", "hw-formal"]
+testDriver = "Tests"
 
 [[lean_lib]]
 name = "HwFormal"
+
+# Generated hardware models and their proofs (one module per file in tests/).
+[[lean_lib]]
+name = "Tests"
+srcDir = "."
+globs = ["tests.+"]
+# generated models bind unused `i`/`o` variables; silence so `--wfail` stays meaningful
+leanOptions = { linter.unusedVariables = false }
 
 [[lean_exe]]
 name = "hw-formal"
