@@ -5,6 +5,22 @@ structure TransSys (S I O : Type) where
   constraint : S → I → Bool
   bad : S → I → Bool
 
+/-- Return initial state predicate asserting state `s` with input `i` is an initial state  -/
+def TransSys.Init (sys : TransSys S I O) (s : S) (i : I) : Prop :=
+  ∃(o : O), sys.init o i = s
+
+/-- Return transition relation asserting state `s` transitions to state `s'` with input `i` -/
+def TransSys.Trans (sys : TransSys S I O) (s s' : S) (i : I) : Prop :=
+  sys.next s i = s'
+
+/-- Return constraint predicate asserting state `s` with input `i` satisfies the constraints -/
+def TransSys.Constraint (sys : TransSys S I O) (s : S) (i : I) : Prop :=
+  sys.constraint s i = true
+
+/-- Return bad state predicate asserting state `s` with input `i` is a bad state -/
+def TransSys.Bad (sys : TransSys S I O) (s : S) (i : I) : Prop :=
+  sys.bad s i = true
+
 /-- Return trace for transistion system execution on finite number of inputs -/
 def TransSys.simulate (sys : TransSys S I O) (o : O) (is : List I) : List S :=
   match is with
