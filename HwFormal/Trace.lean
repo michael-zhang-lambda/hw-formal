@@ -114,3 +114,25 @@ theorem trace_safe_iff_safe (sys : TransSys S I O) : trace_safe sys ↔ sys.safe
     obtain ⟨o, inp, hv, hr, hi⟩ := ht'.head_run p.1 p.2 t' rfl
     have := hs o inp t'.length hv
     simp [TransSys.Bad, ← hr, ← hi, this]
+
+/-- Prove `trace_safe` from an inductive state invariant, by induction on `Trace`
+(independent of `trace_safe_iff_safe`). -/
+theorem Trace.safe_of_inv (sys : TransSys S I O) (Inv : S → Prop)
+    (hinit : ∀ s i, sys.Init s i → sys.Constraint s i → Inv s)
+    (hstep : ∀ s s' i, Inv s → sys.Constraint s i → sys.Trans s s' i → Inv s')
+    (hsafe : ∀ s i, Inv s → sys.Constraint s i → ¬ sys.Bad s i) :
+    trace_safe sys := by
+  have key : ∀ t, Trace sys t → ∀ p ∈ t, Inv p.1 ∧ sys.Constraint p.1 p.2 := by
+    intro t ht
+    induction ht with
+    | nil => simp
+    | singleton s i hi hc => simp only [List.mem_singleton]; rintro p rfl; exact ⟨hinit s i hi hc, hc⟩
+    | cons s s' i i' t _ htr hc ih =>
+      obtain ⟨hs, hcs⟩ := ih (s, i) (by simp)
+      intro p hp
+      rcases List.mem_cons.mp hp with rfl | hp
+      · exact ⟨hstep s s' i hs hcs htr, hc⟩
+      · exact ih p hp
+  intro t ht p hp
+  obtain ⟨h1, h2⟩ := key t ht p hp
+  exact hsafe p.1 p.2 h1 h2
